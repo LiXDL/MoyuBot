@@ -34,6 +34,7 @@ async def write_card_info(database: Path, record: list):
             INSERT INTO CardInfo (
             id, 
             name, 
+            release, 
             char_id, 
             school_id, 
             rarity, 
@@ -85,6 +86,9 @@ def split(dress: dict):
 
     name = str(dress['basicInfo']['name']['ja']).encode('utf8')
     result_sqlite.append(name)
+
+    release = int(dress['basicInfo']['released']['ja'])
+    result_sqlite.append(release)
 
     char_id = int(dress['basicInfo']['character'])
     result_sqlite.append(char_id)
