@@ -11,7 +11,7 @@ from MoyuBot.src.plugins.GameResourceManager.model import DBSCode
 
 
 #   Requests from url
-async def request(url):
+async def fetch_card_info(url):
     async with aiohttp.ClientSession() as session:
         response = await session.get(url)
         status = response.status
@@ -26,7 +26,7 @@ async def request(url):
 
 #   Write to Card sqlite
 #   :param database: the database file to be connected
-#   :param record: list of inserted values, assumed to be following the insertion order with length 17
+#   :param record: list of inserted values, assumed to be following the insertion order
 async def write_card_info(database: Path, record: list):
     async with aiosqlite.connect(database) as aio_conn:
         try:
@@ -51,7 +51,7 @@ async def write_card_info(database: Path, record: list):
             critical_chance, 
             critical_damage) 
             VALUES ({})
-            '''.format(', '.join(['?'] * 17)), record)
+            '''.format(', '.join(['?'] * len(record))), record)
 
             await aio_conn.commit()
 
@@ -64,6 +64,10 @@ async def write_card_info(database: Path, record: list):
 #   Write to Card Skill directory
 #   Generate two corresponding JSON files
 #   Use pathlib.Path to access certain path.
+#   :param active_path: directory for storing active skills
+#   :param active_skill: dict storing active skills
+#   :param passive_path: directory for storing passive ksills
+#   :param passive_skill: dict storing passive skills
 async def write_card_skill(active_path: Path, active_skill, passive_path: Path, passive_skill, card_id: str):
     active_file = active_path.joinpath(card_id + '.json')
     passive_file = passive_path.joinpath(card_id + '.json')
@@ -75,6 +79,24 @@ async def write_card_skill(active_path: Path, active_skill, passive_path: Path, 
         await f.write(json.dumps(passive_skill))
 
     return {'Status': DBSCode.SUCCESS}
+
+
+#   Get card Art image
+async def fetch_card_art(url: str):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                image_content = await response.read()
+                return {'image': image_content}
+            else:
+                return {'image': ''}
+
+
+#   Store card Art image to the given directory with id as name
+async def write_card_art(art_path: Path, card_id: str, image):
+    async with aiofiles.open(art_path.joinpath(card_id + '.png'), 'wb') as f:
+        await f.write(image)
+        return DBSCode.SUCCESS
 
 
 #   Separate and format original JSON file for storing
@@ -155,7 +177,7 @@ async def grab_one_card(card_id: str):
     url = 'https://karth.top/api/dress/{}.json'.format(card_id)
     data_path = Path().cwd().parent.parent.parent.joinpath('Data').joinpath('Card')
 
-    card_info = await request(url)
+    card_info = await fetch_card_info(url)
     print('Fetching card {}'.format(card_id))
 
     result = card_info['result']
@@ -203,5 +225,15 @@ def multi_test(max_card_num=30):
     print('Time spend: {}'.format(end - start))
 
 
+def grab_one_image():
+    url = 'https://api.karen.makoo.eu/api/assets/dlc/res/dress/cg/{}/image.png'
+    art_path = Path().cwd().parent.parent.parent.joinpath('Data').joinpath('Card').joinpath('Art')
+
+    loop = asyncio.get_event_loop()
+    task = loop.create_task(fetch_card_art(url.format('2020020')))
+    loop.run_until_complete(task)
+    print('image: {}'.format(task.result()))
+
+
 if __name__ == '__main__':
-    multi_test()
+    grab_one_image()

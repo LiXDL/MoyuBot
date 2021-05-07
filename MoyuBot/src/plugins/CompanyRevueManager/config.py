@@ -7,6 +7,8 @@ class Config(BaseSettings):
     memoir_storage: str = 'Data/Memoir'
     other_storage: str = 'Data/Other'
 
+    company_storage: str = 'Data/Company'
+
     max_card_number: int = 30
 
     class Config:
