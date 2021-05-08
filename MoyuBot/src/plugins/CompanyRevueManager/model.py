@@ -1,0 +1,15 @@
+from enum import Enum
+
+
+class DBStatusCode(Enum):
+    INSERT_SUCCESS = 201
+    DELETE_SUCCESS = 202
+    UPDATE_SUCCESS = 203
+    SEARCH_SUCCESS = 204
+
+    INSERT_FAIL = 301
+    DELETE_FAIL = 302
+    UPDATE_FAIL = 303
+    SEARCH_FAIL = 304
+
+    UNKNOWN_ERROR = 404
