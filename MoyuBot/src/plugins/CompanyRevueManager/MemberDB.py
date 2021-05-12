@@ -1,6 +1,6 @@
 import aiosqlite
 from pathlib import Path
-from MoyuBot.src.plugins.CompanyRevueManager.model import DBStatusCode
+from .model import DBStatusCode
 
 
 class MemberDB:
@@ -11,13 +11,13 @@ class MemberDB:
 
     #   Add record to CompanyInfo
     #   :param: must include {id: str, alias: str, account: str, password: str}
-    async def add(self, **kwargs):
+    async def add(self, info: dict):
 
         record = (
-            str(kwargs['id']),
-            str(kwargs['alias']).encode('utf8'),
-            str(kwargs['account']),
-            str(kwargs['password'])
+            str(info['id']),
+            str(info['alias']).encode('utf8'),
+            str(info['account']),
+            str(info['password'])
         )
         insert_phrase = '''
         INSERT INTO CompanyInfo VALUES(?, ?, ?, ?);
@@ -32,13 +32,11 @@ class MemberDB:
                     'error': None
                 }
             except aiosqlite.Error as sqlerror:
-                await conn.close()
                 return {
                     'status': DBStatusCode.INSERT_FAIL,
                     'error': sqlerror
                 }
             except Exception as e:
-                await conn.close()
                 return {
                     'status': DBStatusCode.UNKNOWN_ERROR,
                     'error': e
@@ -61,13 +59,11 @@ class MemberDB:
                     'error': None
                 }
             except aiosqlite.Error as sqlerror:
-                await conn.close()
                 return {
                     'status': DBStatusCode.DELETE_FAIL,
                     'error': sqlerror
                 }
             except Exception as e:
-                await conn.close()
                 return {
                     'status': DBStatusCode.UNKNOWN_ERROR,
                     'error': e
@@ -75,13 +71,13 @@ class MemberDB:
 
     #   Update record in CompanyInfo
     #   :param: must include {id: str, alias: str, account: str, password: str}
-    async def update(self, **kwargs):
+    async def update(self, info):
 
         record = (
-            str(kwargs['alias']).encode('utf8'),
-            str(kwargs['account']),
-            str(kwargs['password']),
-            str(kwargs['id'])
+            str(info['alias']).encode('utf8'),
+            str(info['account']),
+            str(info['password']),
+            str(info['id'])
         )
         update_phrase = '''
         UPDATE CompanyInfo
@@ -98,13 +94,11 @@ class MemberDB:
                     'error': None
                 }
             except aiosqlite.Error as sqlerror:
-                await conn.close()
                 return {
                     'status': DBStatusCode.UPDATE_FAIL,
                     'error': sqlerror
                 }
             except Exception as e:
-                await conn.close()
                 return {
                     'status': DBStatusCode.UNKNOWN_ERROR,
                     'error': e
@@ -133,13 +127,13 @@ class MemberDB:
         async with aiosqlite.connect(self._database) as conn:
             try:
                 async with conn.execute(search_phrase, search_param) as cursor:
-                    record = cursor.fetchone()
+                    record = await cursor.fetchone()
                     if record:
                         result = {
-                            'id': str(record['id']),
-                            'alias': bytes(record['alias']).decode('utf8'),
-                            'account': str(record['account']),
-                            'password': str(record['password'])
+                            'id': str(record[0]),
+                            'alias': bytes(record[1]).decode('utf8'),
+                            'account': str(record[2]),
+                            'password': str(record[3])
                         }
                         return {
                             'status': DBStatusCode.SEARCH_SUCCESS,
@@ -153,14 +147,12 @@ class MemberDB:
                             'result': {}
                         }
             except aiosqlite.Error as sqlerror:
-                await conn.close()
                 return {
                     'status': DBStatusCode.SEARCH_FAIL,
                     'error': sqlerror,
                     'result': {}
                 }
             except Exception as e:
-                await conn.close()
                 return {
                     'status': DBStatusCode.UNKNOWN_ERROR,
                     'error': e,
@@ -179,20 +171,18 @@ class MemberDB:
                 async with conn.execute(search_phrase) as cursor:
                     async for record in cursor:
                         result.append({
-                            'id': str(record['id']),
-                            'alias': bytes(record['alias']).decode('utf8'),
-                            'account': str(record['account']),
-                            'password': str(record['password'])
+                            'id': str(record[0]),
+                            'alias': bytes(record[1]).decode('utf8'),
+                            'account': str(record[2]),
+                            'password': str(record[3])
                         })
             except aiosqlite.Error as sqlerror:
-                await conn.close()
                 return {
                     'status': DBStatusCode.SEARCH_FAIL,
                     'error': sqlerror,
                     'result': []
                 }
             except Exception as e:
-                await conn.close()
                 return {
                     'status': DBStatusCode.UNKNOWN_ERROR,
                     'error': e,
