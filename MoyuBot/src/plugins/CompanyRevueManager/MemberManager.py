@@ -1,5 +1,3 @@
-import sys
-import traceback
 from pathlib import Path
 
 import nonebot
@@ -16,9 +14,14 @@ from . import MemberDB
 global_config = nonebot.get_driver().config
 plugin_config = Config(**global_config.dict())
 
-
 member_database = MemberDB.MemberDB(
-    Path().cwd().joinpath('Data').joinpath('Company').joinpath('Test').joinpath('CompanyRevue.db')
+    Path().cwd().joinpath(plugin_config.company_storage).joinpath('Test').joinpath('CompanyRevue.db')
+)
+
+helper = on_command(
+    cmd='help_member',
+    aliases={'成员管理'},
+    priority=10
 )
 
 add_member = on_command(
@@ -55,8 +58,18 @@ list_member = on_command(
 )
 
 
+@helper.handle()
+async def helper_handler(bot: cqhttp.Bot, event: cqhttp.Event):
+    await helper.finish(InteractionMessage.MEMBER_MANAGER_HELP_MESSAGE)
+
+
+@add_member.args_parser
+async def add_member_parser(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
+    state[state['_current_key']] = str(event.get_message()).strip().split(plugin_config.separator)
+
+
 @add_member.handle()
-async def add_member_handler(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
+async def add_member_first_receive(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
     raw_args = str(event.get_message()).strip()
     if raw_args:
         arg_list = raw_args.split(plugin_config.separator)
@@ -64,7 +77,7 @@ async def add_member_handler(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent,
 
 
 @add_member.got('info', prompt=InteractionMessage.REQUEST_ARG)
-async def _(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
+async def add_member_handler(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
     #   Check if all 4 info are provided
     if len(state['info']) != 4:
         await add_member.finish(
@@ -84,7 +97,7 @@ async def _(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_
     else:
         if bot.config.debug:
             await bot.send_private_msg(
-                user_id=plugin_config.ADMIN,
+                user_id=plugin_config.AUTHOR,
                 message=str(add_result['error']))
 
         await add_member.finish('\n'.join([
@@ -93,24 +106,29 @@ async def _(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_
         ]))
 
 
+@remove_member.args_parser
+async def remove_member_parser(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
+    state[state['_current_key']] = str(event.get_message()).strip()
+
+
 @remove_member.handle()
-async def remove_member_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
+async def remove_member_first_receive(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     raw_args = str(event.get_message()).strip()
     if raw_args:
         state['member_id'] = raw_args
 
 
 @remove_member.got('member_id', prompt=InteractionMessage.REQUEST_ARG)
-async def _(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
+async def remove_member_requester(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     #   Check if the provided member_id is in the records
-    search_result = await member_database.search(member_id=state['member_id'], alias='')
+    search_result = await member_database.search(state['member_id'])
 
     if search_result['status'] != DBStatusCode.SEARCH_SUCCESS:
         if bot.config.debug:
             await bot.send_private_msg(
-                user_id=plugin_config.ADMIN,
-                message=str(search_result['error']))
-
+                user_id=plugin_config.AUTHOR,
+                message=str(search_result['error'])
+            )
         await remove_member.finish('\n'.join([
             InteractionMessage.RECORD_CHANGE_FAIL,
             InteractionMessage.ERROR_MESSAGE
@@ -135,7 +153,7 @@ async def _(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
 
 
 @remove_member.handle()
-async def _(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
+async def remove_member_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     #   Request valid confirmation for deletion
     while True:
         if str(event.get_message()).strip() not in InteractionMessage.CONFIRMATION_MESSAGE:
@@ -154,9 +172,9 @@ async def _(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
         if remove_result['status'] != DBStatusCode.DELETE_SUCCESS:
             if bot.config.debug:
                 await bot.send_private_msg(
-                    user_id=plugin_config.ADMIN,
-                    message=str(remove_result['error']))
-
+                    user_id=plugin_config.AUTHOR,
+                    message=str(remove_result['error'])
+                )
             await remove_member.finish('\n'.join([
                 InteractionMessage.RECORD_CHANGE_FAIL,
                 InteractionMessage.ERROR_MESSAGE
@@ -167,8 +185,13 @@ async def _(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
             )
 
 
+@update_member.args_parser
+async def update_member_parser(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
+    state[state['_current_key']] = str(event.get_message()).strip().split(plugin_config.separator)
+
+
 @update_member.handle()
-async def update_member_handler(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
+async def update_member_first_receive(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
     raw_args = str(event.get_message()).strip()
     if raw_args:
         arg_list = raw_args.split(plugin_config.separator)
@@ -176,7 +199,7 @@ async def update_member_handler(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEve
 
 
 @update_member.got('new_info', prompt=InteractionMessage.REQUEST_ARG)
-async def _(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
+async def update_member_requester(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
     #   Check if all 4 info are provided
     if len(state['new_info']) != 4:
         await update_member.finish(
@@ -184,14 +207,14 @@ async def _(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_
         )
 
     #   Check if the provided member_id is in the records
-    search_result = await member_database.search(member_id=str(state['new_info'][0]).strip(), alias='')
+    search_result = await member_database.search(str(state['new_info'][0]).strip())
 
     if search_result['status'] != DBStatusCode.SEARCH_SUCCESS:
         if bot.config.debug:
             await bot.send_private_msg(
-                user_id=plugin_config.ADMIN,
-                message=str(search_result['error']))
-
+                user_id=plugin_config.AUTHOR,
+                message=str(search_result['error'])
+            )
         await update_member.finish('\n'.join([
             InteractionMessage.RECORD_CHANGE_FAIL,
             InteractionMessage.ERROR_MESSAGE
@@ -216,7 +239,7 @@ async def _(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_
 
 
 @update_member.handle()
-async def _(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
+async def update_member_handler(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
     #   Request valid confirmation for update
     while True:
         if str(event.get_message()).strip() not in InteractionMessage.CONFIRMATION_MESSAGE:
@@ -242,9 +265,9 @@ async def _(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_
         if update_result['status'] != DBStatusCode.UPDATE_SUCCESS:
             if bot.config.debug:
                 await bot.send_private_msg(
-                    user_id=plugin_config.ADMIN,
-                    message=str(update_result['error']))
-
+                    user_id=plugin_config.AUTHOR,
+                    message=str(update_result['error'])
+                )
             await update_member.finish('\n'.join([
                 InteractionMessage.RECORD_CHANGE_FAIL,
                 InteractionMessage.ERROR_MESSAGE
@@ -255,6 +278,145 @@ async def _(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_
             )
 
 
-# @search_member.handle()
-# async def search_member_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
-#     pass
+@search_member.args_parser
+async def search_member_parser(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
+    state[state['_current_key']] = str(event.get_message()).strip()
+
+
+@search_member.handle()
+async def search_member_first_receive(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
+    raw_arg = str(event.get_message()).strip()
+    if raw_arg:
+        state['search_info'] = raw_arg
+
+
+@search_member.got('search_info', prompt=InteractionMessage.REQUEST_ARG)
+async def search_member_searcher(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
+    search_result = await member_database.search(str(state['search_info']).strip())
+
+    if search_result['status'] != DBStatusCode.SEARCH_SUCCESS:
+        if bot.config.debug:
+            await bot.send_private_msg(
+                user_id=plugin_config.AUTHOR,
+                message=str(search_result['error'])
+            )
+        await search_member.finish(InteractionMessage.ERROR_MESSAGE)
+    else:
+        if not search_result['result']:
+            #   No record found
+            await search_member.finish(InteractionMessage.RECORD_FIND_FAIL.format(state['search_info']))
+        else:
+            state['search_result'] = search_result
+
+
+@search_member.handle()
+async def search_member_private_handler(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
+    raw_info = state['search_result']['result']
+
+    if event.user_id in plugin_config.ADMIN:
+        #   Output full information for Company Administrator
+        await search_member.finish(
+            InteractionMessage.RECORD_FIND_SUCCESS.format(state['search_info']) + '\n' +
+            '\t' + _admin_info_format(raw_info)
+        )
+    else:
+        #   Output only non-private information for ordinary member
+        await search_member.finish(
+            InteractionMessage.RECORD_FIND_SUCCESS.format(state['search_info']) + '\n' +
+            '\t' + _non_admin_info_format(raw_info)
+        )
+
+
+@search_member.handle()
+async def search_member_group_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+    raw_info = state['search_result']['result']
+
+    if event.sender.role in ['owner', 'admin'] or event.user_id in plugin_config.ADMIN:
+        #   Output full information for Company Administrator through private message
+        await bot.send_private_msg(
+            user_id=event.user_id,
+            message=InteractionMessage.RECORD_FIND_SUCCESS.format(state['search_info']) + '\n' +
+            '\t' + _admin_info_format(raw_info)
+        )
+        await search_member.finish(
+            message=InteractionMessage.PRIVATE_MESSAGE_SENT_CHECK,
+            at_sender=True
+        )
+    else:
+        #   Output only non-private information for ordinary member
+        await search_member.finish(
+            message=InteractionMessage.RECORD_FIND_SUCCESS.format(state['search_info']) + '\n' +
+            '\t' + _non_admin_info_format(raw_info)
+        )
+
+
+@list_member.handle()
+async def list_member_retriever(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
+    member_list_result = await member_database.display()
+
+    if member_list_result['status'] != DBStatusCode.SEARCH_SUCCESS:
+        if bot.config.debug:
+            await bot.send_private_msg(
+                user_id=plugin_config.AUTHOR,
+                message=str(member_list_result['error'])
+            )
+        await search_member.finish(InteractionMessage.ERROR_MESSAGE)
+    else:
+        if not member_list_result['result']:
+            #   No member stored
+            await search_member.finish(InteractionMessage.RECORD_LIST_EMPTY)
+        else:
+            state['member_list'] = member_list_result['result']
+
+
+@list_member.handle()
+async def list_member_private_handler(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent, state: typing.T_State):
+    if event.user_id in plugin_config.ADMIN:
+        #   Output full information for Company Administrator
+        output_message = InteractionMessage.RECORD_LIST_SUCCESS + '\n\t' + \
+                         '\n\t'.join(map(_admin_info_format, state['member_list']))
+
+        await search_member.finish(message=output_message)
+    else:
+        #   Output only non-private information for ordinary member
+        output_message = InteractionMessage.RECORD_LIST_SUCCESS + '\n\t' + \
+                         '\n\t'.join(map(_non_admin_info_format, state['member_list']))
+
+        await search_member.finish(message=output_message)
+
+
+@list_member.handle()
+async def list_member_group_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+    if event.sender.role in ['owner', 'admin'] or event.user_id in plugin_config.ADMIN:
+        #   Output full information for Company Administrator through private message
+        output_message = InteractionMessage.RECORD_LIST_SUCCESS + '\n\t' + \
+                         '\n\t'.join(map(_admin_info_format, state['member_list']))
+
+        await bot.send_private_msg(
+            user_id=event.user_id,
+            message=output_message
+        )
+        await search_member.finish(
+            message=InteractionMessage.PRIVATE_MESSAGE_SENT_CHECK,
+            at_sender=True
+        )
+    else:
+        #   Output only non-private information for ordinary member
+        output_message = InteractionMessage.RECORD_LIST_SUCCESS + '\n\t' + \
+                         '\n\t'.join(map(_non_admin_info_format, state['member_list']))
+
+        await search_member.finish(message=output_message)
+
+
+#   :param: raw_info should be {'id': id, 'alias': alias, 'account': account, 'password': password}
+def _admin_info_format(raw_info: dict):
+    return 'QQ号: {}; '.format(raw_info['id']) + \
+           '昵称: {}; '.format(raw_info['alias']) + \
+           '账号: {}; '.format(raw_info['account']) + \
+           '密码: {}.'.format(raw_info['password'])
+
+
+#   :param: raw_info should be {'id': id, 'alias': alias, 'account': account, 'password': password}
+def _non_admin_info_format(raw_info: dict):
+    return 'QQ号: {}; '.format(raw_info['id']) + \
+           '昵称: {}. '.format(raw_info['alias'])

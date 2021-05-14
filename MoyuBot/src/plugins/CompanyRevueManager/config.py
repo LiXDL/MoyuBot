@@ -2,7 +2,8 @@ from pydantic import BaseSettings
 
 
 class Config(BaseSettings):
-    ADMIN = 476121826
+    AUTHOR = 476121826
+    ADMIN = [476121826]
 
     card_info_storage: str = 'Data/Card'
     card_skill_storage: str = 'Data/Card/Skill'

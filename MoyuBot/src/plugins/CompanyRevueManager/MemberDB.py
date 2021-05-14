@@ -105,24 +105,22 @@ class MemberDB:
                 }
 
     #   Search record in CompanyInfo
-    #   :param: member_id: str, alias: str, member_id is first used if available
-    #   empty input will be considered as unavailable
-    #   member_id and alias should not be empty simultaneously
-    async def search(self, member_id: str, alias: str):
-        if member_id != '':
-            #   Use member_id to search
-            search_phrase = '''
-            SELECT * FROM CompanyInfo
-            WHERE id = ?;
-            '''
-            search_param = (member_id, )
-        else:
-            #   Use alias to search
-            search_phrase = '''
-            SELECT * FROM CompanyInfo
-            WHERE alias = ?;
-            '''
-            search_param = (alias.encode('utf8'), )
+    #   :param: identifier: str, represents either id or alias
+    #   empty input will be considered as no match
+    async def search(self, identifier: str):
+        if identifier is None or identifier == '':
+            return {
+                'status': DBStatusCode.SEARCH_SUCCESS,
+                'error': None,
+                'result': {}
+            }
+
+        search_phrase = '''
+        SELECT * FROM CompanyInfo
+        WHERE id = ?
+        OR alias = ?; 
+        '''
+        search_param = (identifier, identifier.encode('utf8'))
 
         async with aiosqlite.connect(self._database) as conn:
             try:
@@ -176,6 +174,12 @@ class MemberDB:
                             'account': str(record[2]),
                             'password': str(record[3])
                         })
+
+                return {
+                    'status': DBStatusCode.SEARCH_SUCCESS,
+                    'error': None,
+                    'result': result
+                }
             except aiosqlite.Error as sqlerror:
                 return {
                     'status': DBStatusCode.SEARCH_FAIL,
