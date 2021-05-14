@@ -42,7 +42,8 @@ health INT
 create_team_table = '''
 CREATE TABLE IF NOT EXISTS Team (
 id INTEGER PRIMARY KEY AUTOINCREMENT, 
-member_id TEXT, 
+member_id TEXT,
+team_number INT,  
 char_id TEXT, 
 us_list TEXT,
 CONSTRAINT fk_member 
@@ -59,7 +60,6 @@ boss_id INT,
 team INT, 
 sequence INT, 
 turn INT, 
-remain_turn INT, 
 damage INT, 
 time INT, 
 CONSTRAINT fk_member 

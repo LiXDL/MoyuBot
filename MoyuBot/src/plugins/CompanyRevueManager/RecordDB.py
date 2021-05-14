@@ -24,7 +24,6 @@ class RecordDB:
             int(info['team']),
             int(info['sequence']),
             int(info['turn']),
-            int(info['remain_turn']),
             int(info['damage']),
             int(info['time'])
         )

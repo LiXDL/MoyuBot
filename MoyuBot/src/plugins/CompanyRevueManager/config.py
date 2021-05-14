@@ -13,7 +13,7 @@ class Config(BaseSettings):
     company_storage: str = 'Data/Company'
     company_record: str = 'Test'
 
-    max_card_number: int = 30
+    default_revue_turn = 6
 
     separator: str = ','
 
