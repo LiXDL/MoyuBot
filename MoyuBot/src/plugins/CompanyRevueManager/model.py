@@ -42,7 +42,7 @@ class InteractionMessage:
     3. /更新成员 QQ号,昵称,游戏账号,密码（仅限超管使用）
     4. /搜索成员 [QQ号/昵称]
     5. /成员列表
-    '''
+    '''.strip()
 
     BOSS_MANAGER_HELP_MESSAGE = '''
     boss管理：
@@ -52,4 +52,4 @@ class InteractionMessage:
     3. /更新boss BossID,Boss名,血量（仅限管理使用）
     4. /搜索boss [BossID/Boss名]
     5. /boss列表
-    '''
+    '''.strip()

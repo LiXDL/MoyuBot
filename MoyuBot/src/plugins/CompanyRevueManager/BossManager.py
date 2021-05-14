@@ -17,9 +17,9 @@ plugin_config = Config(**global_config.dict())
 
 boss_database = BossDB.BossDB(
     Path().cwd()
-        .joinpath(plugin_config.company_storage)
-        .joinpath(plugin_config.company_record)
-        .joinpath('CompanyRevue.db')
+    .joinpath(plugin_config.company_storage)
+    .joinpath(plugin_config.company_record)
+    .joinpath('CompanyRevue.db')
 )
 
 helper = on_command(
