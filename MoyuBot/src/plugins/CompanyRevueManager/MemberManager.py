@@ -15,7 +15,10 @@ global_config = nonebot.get_driver().config
 plugin_config = Config(**global_config.dict())
 
 member_database = MemberDB.MemberDB(
-    Path().cwd().joinpath(plugin_config.company_storage).joinpath('Test').joinpath('CompanyRevue.db')
+    Path().cwd()
+    .joinpath(plugin_config.company_storage)
+    .joinpath(plugin_config.company_record)
+    .joinpath('CompanyRevue.db')
 )
 
 helper = on_command(
@@ -85,10 +88,10 @@ async def add_member_handler(bot: cqhttp.Bot, event: cqhttp.PrivateMessageEvent,
         )
 
     info = {
-        'id': state['info'][0],
-        'alias': state['info'][1],
-        'account': state['info'][2],
-        'password': state['info'][3]
+        'id': str(state['info'][0]).strip(),
+        'alias': str(state['info'][1]).strip(),
+        'account': str(state['info'][2]).strip(),
+        'password': str(state['info'][3]).strip()
     }
 
     add_result = await member_database.add(info)

@@ -3,7 +3,7 @@ from pydantic import BaseSettings
 
 class Config(BaseSettings):
     AUTHOR = 476121826
-    ADMIN = [476121826]
+    ADMIN = [476121826, 1282403844]
 
     card_info_storage: str = 'Data/Card'
     card_skill_storage: str = 'Data/Card/Skill'
@@ -11,6 +11,7 @@ class Config(BaseSettings):
     other_storage: str = 'Data/Other'
 
     company_storage: str = 'Data/Company'
+    company_record: str = 'Test'
 
     max_card_number: int = 30
 

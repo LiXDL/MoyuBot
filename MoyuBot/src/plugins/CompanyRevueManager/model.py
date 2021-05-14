@@ -43,3 +43,13 @@ class InteractionMessage:
     4. /搜索成员 [QQ号/昵称]
     5. /成员列表
     '''
+
+    BOSS_MANAGER_HELP_MESSAGE = '''
+    boss管理：
+    0. 使用英文逗号","作为参数分隔符
+    1. /添加boss BossID,Boss名,血量（仅限管理使用）
+    2. /移除boss BossID（仅限管理使用）
+    3. /更新boss BossID,Boss名,血量（仅限管理使用）
+    4. /搜索boss [BossID/Boss名]
+    5. /boss列表
+    '''

@@ -3,23 +3,22 @@ from pathlib import Path
 from .model import DBStatusCode
 
 
-class MemberDB:
+class BossDB:
 
     #   database must exist and be a .db file
     def __init__(self, database: Path):
         self._database = database
 
-    #   Add record to CompanyInfo
-    #   :param: must include {id: str, alias: str, account: str, password: str}
+    #   Add record to BossInfo
+    #   :param: must include {id: int, alias: str, health: int}
     async def add(self, info: dict):
         record = (
-            str(info['id']),
+            int(info['id']),
             str(info['alias']).encode('utf8'),
-            str(info['account']),
-            str(info['password'])
+            int(info['health'])
         )
         insert_phrase = '''
-        INSERT INTO CompanyInfo VALUES(?, ?, ?, ?);
+        INSERT INTO BossInfo VALUES(?, ?, ?);
         '''
 
         async with aiosqlite.connect(self._database) as conn:
@@ -41,17 +40,17 @@ class MemberDB:
                     'error': e
                 }
 
-    #   Delete record from CompanyInfo
+    #   Delete record from BossInfo
     #   :param: must only be id
-    async def remove(self, member_id: str):
+    async def remove(self, boss_id: int):
         remove_phrase = '''
-        DELETE FROM CompanyInfo 
+        DELETE FROM BossInfo
         WHERE id = ?;
         '''
 
         async with aiosqlite.connect(self._database) as conn:
             try:
-                await conn.execute(remove_phrase, (member_id, ))
+                await conn.execute(remove_phrase, (boss_id, ))
                 await conn.commit()
                 return {
                     'status': DBStatusCode.DELETE_SUCCESS,
@@ -69,17 +68,16 @@ class MemberDB:
                 }
 
     #   Update record in CompanyInfo
-    #   :param: must include {id: str, alias: str, account: str, password: str}
+    #   :param: must include {id: int, alias: str, health: int}
     async def update(self, info):
         record = (
             str(info['alias']).encode('utf8'),
-            str(info['account']),
-            str(info['password']),
-            str(info['id'])
+            int(info['health']),
+            int(info['id'])
         )
         update_phrase = '''
-        UPDATE CompanyInfo
-        SET alias = ?, account = ?, password = ? 
+        UPDATE BossInfo
+        SET alias = ?, health = ?
         WHERE id = ?;
         '''
 
@@ -102,7 +100,7 @@ class MemberDB:
                     'error': e
                 }
 
-    #   Search record in CompanyInfo
+    #   Search record in BossInfo
     #   :param: identifier: str, represents either id or alias
     #   empty input will be considered as no match
     async def search(self, identifier: str):
@@ -113,23 +111,29 @@ class MemberDB:
                 'result': {}
             }
 
-        search_phrase = '''
-        SELECT * FROM CompanyInfo
-        WHERE id = ?
-        OR alias = ?; 
-        '''
-        search_param = (identifier, identifier.encode('utf8'))
+        #   Check identifier is id or alias
+        try:
+            search_phrase = '''
+            SELECT * FROM BossInfo
+            WHERE id = ?;
+            '''
+            search_param = int(identifier)
+        except ValueError:
+            search_phrase = '''
+            SELECT * FROM BossInfo
+            WHERE alias = ?;
+            '''
+            search_param = str(identifier).encode('utf8')
 
         async with aiosqlite.connect(self._database) as conn:
             try:
-                async with conn.execute(search_phrase, search_param) as cursor:
+                async with conn.execute(search_phrase, (search_param, )) as cursor:
                     record = await cursor.fetchone()
                     if record:
                         result = {
-                            'id': str(record[0]),
+                            'id': int(record[0]),
                             'alias': bytes(record[1]).decode('utf8'),
-                            'account': str(record[2]),
-                            'password': str(record[3])
+                            'health': int(record[2])
                         }
                         return {
                             'status': DBStatusCode.SEARCH_SUCCESS,
@@ -158,7 +162,7 @@ class MemberDB:
     #   List all records in CompanyInfo
     async def display(self):
         search_phrase = '''
-        SELECT * FROM CompanyInfo
+        SELECT * FROM BossInfo
         ORDER BY id;
         '''
         result = []
@@ -168,10 +172,9 @@ class MemberDB:
                 async with conn.execute(search_phrase) as cursor:
                     async for record in cursor:
                         result.append({
-                            'id': str(record[0]),
+                            'id': int(record[0]),
                             'alias': bytes(record[1]).decode('utf8'),
-                            'account': str(record[2]),
-                            'password': str(record[3])
+                            'health': int(record[2])
                         })
 
                 return {
