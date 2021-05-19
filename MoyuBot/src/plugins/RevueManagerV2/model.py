@@ -1,3 +1,9 @@
+#   ORM database model and initialization
+
+import asyncio
+import aiosqlite
+from pathlib import Path
+
 from sqlalchemy import (
     Column,
     Integer,
@@ -5,9 +11,11 @@ from sqlalchemy import (
     ForeignKey
 )
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import relationship
 
 Base = declarative_base()
+DB_FILE = Path.cwd().parent.parent.parent.joinpath('Data/Company').joinpath('ORMTest').joinpath('Revue.db')
 
 
 class Member(Base):
@@ -100,3 +108,14 @@ class Team(Base):
         return '<TeamRecord (id: {}, member_id: {}, team_id: {}, team_list: [{}], us_list: [{}])>'.format(
             self.record_id, self.member_id, self.team_id, self.team_list, self.us_list
         )
+
+
+async def async_main():
+    aioengine = create_async_engine('sqlite+aiosqlite:///' + str(DB_FILE), echo=True)
+
+    async with aioengine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+
+asyncio.run(async_main())
