@@ -173,9 +173,9 @@ class BossDB:
                     records = await cursor.fetchall()
                     for record in records:
                         result.append({
-                            'id': int(record['id']),
-                            'alias': bytes(record['alias']).decode('utf8'),
-                            'health': int(record['health'])
+                            'id': int(record[0]),
+                            'alias': bytes(record[1]).decode('utf8'),
+                            'health': int(record[2])
                         })
                 return {
                     'status': DBStatusCode.SEARCH_SUCCESS,

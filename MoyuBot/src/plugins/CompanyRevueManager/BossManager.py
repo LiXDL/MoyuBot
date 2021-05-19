@@ -30,34 +30,41 @@ helper = on_command(
 
 add_boss = on_command(
     cmd='add_boss',
-    aliases={'添加boss'},
+    aliases={'添加boss', 'ab'},
+    permission=permission.SUPERUSER | cpermission.GROUP_OWNER | cpermission.GROUP_ADMIN,
+    priority=1
+)
+
+add_boss_range = on_command(
+    cmd='add_boss_range',
+    aliases={'添加boss组', 'abr'},
     permission=permission.SUPERUSER | cpermission.GROUP_OWNER | cpermission.GROUP_ADMIN,
     priority=1
 )
 
 remove_boss = on_command(
     cmd='remove_boss',
-    aliases={'移除boss'},
+    aliases={'移除boss', 'rb'},
     permission=permission.SUPERUSER | cpermission.GROUP_OWNER | cpermission.GROUP_ADMIN,
     priority=2
 )
 
 update_boss = on_command(
     cmd='update_boss',
-    aliases={'更新boss'},
+    aliases={'更新boss', 'ub'},
     permission=permission.SUPERUSER | cpermission.GROUP_OWNER | cpermission.GROUP_ADMIN,
     priority=3
 )
 
 search_boss = on_command(
     cmd='search_boss',
-    aliases={'搜索boss'},
+    aliases={'搜索boss', 'sb'},
     priority=4
 )
 
 list_boss = on_command(
     cmd='list_boss',
-    aliases={'boss列表'},
+    aliases={'boss列表', 'lb'},
     priority=4
 )
 
@@ -68,12 +75,12 @@ async def helper_handler(bot: cqhttp.Bot, event: cqhttp.Event):
 
 
 @add_boss.args_parser
-async def add_boss_parser(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def add_boss_parser(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     state[state['_current_key']] = str(event.get_message()).strip().split(plugin_config.separator)
 
 
 @add_boss.handle()
-async def add_boss_first_receive(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def add_boss_first_receive(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     raw_args = str(event.get_message()).strip()
     if raw_args:
         arg_list = raw_args.split(plugin_config.separator)
@@ -81,7 +88,7 @@ async def add_boss_first_receive(bot: cqhttp.Bot, event: cqhttp.GroupMessageEven
 
 
 @add_boss.got('info', prompt=InteractionMessage.REQUEST_ARG)
-async def add_boss_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def add_boss_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     #   Check if all 3 info are provided
     if len(state['info']) != 3:
         await add_boss.finish(
@@ -107,6 +114,32 @@ async def add_boss_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, sta
             InteractionMessage.RECORD_CHANGE_FAIL,
             InteractionMessage.ERROR_MESSAGE
         ]))
+
+
+#   Should contain boss names, boss healths, start_level(inclusive), end_level(exclusive)
+#   which are total 10 arguments
+@add_boss_range.handle()
+async def add_boss_range_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
+    raw_args = str(event.get_message()).strip()
+    arg_list = list(map(str.strip, raw_args.split(plugin_config.separator)))
+
+    boss_names = arg_list[0:4]
+    boss_healths = list(map(int, arg_list[4:8]))
+    start_level = int(arg_list[8])
+    end_level = int(arg_list[9])
+
+    for level in range(start_level, end_level):
+        for i in range(len(boss_names)):
+            info = {
+                'id': level * 100 + i + 1,
+                'alias': 'R' + str(level) + boss_names[i],
+                'health': boss_healths[i]
+            }
+            await boss_database.add(info)
+
+    await add_boss_range.finish(
+        message='Added Boss in level range {} and {}'.format(start_level, end_level)
+    )
 
 
 @remove_boss.args_parser

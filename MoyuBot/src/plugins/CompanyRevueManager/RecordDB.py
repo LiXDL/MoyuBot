@@ -59,7 +59,7 @@ class RecordDB:
             int(damage_record['damage'])
         ]
         remove_phrase = '''
-        DELETE FROM BossInfo
+        DELETE FROM RevueRecord
         WHERE member_id = ?
         AND boss_id = ?
         AND damage = ?;
@@ -108,9 +108,11 @@ class RecordDB:
             '''
             search_param = (str(identifier), str(identifier).encode('utf8'))
 
-        if not time_range:
+        if time_range:
             search_phrase = search_phrase + '\n AND (r.time BETWEEN ? AND ?)'
             search_param = search_param + time_range
+
+        search_phrase = search_phrase + '\n ORDER BY r.sequence, r.boss_id ASC'
 
         result = []
 
@@ -119,12 +121,18 @@ class RecordDB:
                 async with conn.execute(search_phrase, search_param) as cursor:
                     records = await cursor.fetchall()
                     for record in records:
-                        result.append(
-                            dict(zip(record.keys(), tuple(record)))
-                        )
+                        result.append({
+                            'member_id': str(record[1]),
+                            'boss_id': int(record[2]),
+                            'team': int(record[3]),
+                            'sequence': int(record[4]),
+                            'turn': int(record[5]),
+                            'damage': int(record[6]),
+                            'time': int(record[7])
+                        })
 
                     return {
-                        'status': DBStatusCode.SEARCH_FAIL,
+                        'status': DBStatusCode.SEARCH_SUCCESS,
                         'error': None,
                         'result': result
                     }

@@ -32,13 +32,13 @@ helper = on_command(
 
 add_record = on_command(
     cmd='add_record',
-    aliases={'添加记录'},
+    aliases={'添加记录', 'ar'},
     priority=1
 )
 
 remove_record = on_command(
     cmd='remove_record',
-    aliases={'删除记录'},
+    aliases={'删除记录', 'rr'},
     permission=permission.SUPERUSER | cpermission.GROUP_OWNER | cpermission.GROUP_ADMIN,
     priority=2
 )
@@ -75,9 +75,9 @@ async def helper_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state
 @add_record.handle()
 async def add_record_first_receive(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
     raw_args = str(event.get_message()).strip()
-    arg_list = raw_args.split(plugin_config.separator)
+    arg_list = list(map(str.strip, raw_args.split(plugin_config.separator)))
 
-    if len(arg_list) < 4:
+    if len(arg_list) < 4 or len(arg_list) > 7:
         #   Not enough arguments have been provided
         await add_record.finish(InteractionMessage.INVALID_ARG_NUMBER)
     elif len(arg_list) > 4:
@@ -132,7 +132,7 @@ async def add_record_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, s
 @remove_record.handle()
 async def remove_record_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
     raw_args = str(event.get_message()).strip()
-    arg_list = raw_args.split(plugin_config.separator)
+    arg_list = list(map(str.strip, raw_args.split(plugin_config.separator)))
 
     if len(arg_list) != 3:
         #   Not enough arguments have been provided
@@ -145,7 +145,7 @@ async def remove_record_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent
     }
 
     remove_result = await record_database.remove(remove_identifiers)
-    if remove_result['status'] == DBStatusCode.INSERT_SUCCESS:
+    if remove_result['status'] == DBStatusCode.DELETE_SUCCESS:
         await remove_record.finish(InteractionMessage.RECORD_CHANGE_SUCCESS)
     else:
         if bot.config.debug:
@@ -167,25 +167,27 @@ async def search_record_helper(bot: cqhttp.Bot, event: cqhttp.Event, state: typi
 @search_record_by_member.handle()
 async def search_by_member_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     raw_args = str(event.get_message()).strip()
-    arg_list = raw_args.split(plugin_config.separator)
+    arg_list = list(map(str.strip, raw_args.split(plugin_config.separator)))
 
     if len(arg_list) not in [1, 2]:
         #   Not enough arguments have been provided
         await search_record_by_member.finish(InteractionMessage.INVALID_ARG_NUMBER)
 
     time_range = ()
+    now_date = datetime.date.today().strftime('%Y-%m-%d')
     if len(arg_list) == 1:
         time_range = (
-            time.mktime(datetime.date.today().timetuple()),
-            time.mktime((datetime.date.today() + datetime.timedelta(hours=23, minutes=59, seconds=59)).timetuple())
+            int(time.mktime(datetime.datetime.strptime(now_date, '%Y-%m-%d').timetuple())),
+            int(time.mktime((datetime.datetime.strptime(now_date, '%Y-%m-%d') +
+                             datetime.timedelta(hours=23, minutes=59, seconds=59)).timetuple()))
         )
     else:
         if arg_list[1] != '-all':
             try:
                 time_slice = datetime.datetime.strptime(arg_list[1], '%Y-%m-%d')
                 time_range = (
-                    time.mktime(time_slice.timetuple()),
-                    time.mktime((time_slice + datetime.timedelta(hours=23, minutes=59, seconds=59)).timetuple())
+                    int(time.mktime(time_slice.timetuple())),
+                    int(time.mktime((time_slice + datetime.timedelta(hours=23, minutes=59, seconds=59)).timetuple()))
                 )
             except ValueError:
                 await search_record_by_member.finish(InteractionMessage.INVALID_ARG)
@@ -214,17 +216,19 @@ async def search_by_member_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: 
 @search_record_by_boss.handle()
 async def search_by_boss_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     raw_args = str(event.get_message()).strip()
-    arg_list = raw_args.split(plugin_config.separator)
+    arg_list = list(map(str.strip, raw_args.split(plugin_config.separator)))
 
     if len(arg_list) not in [1, 2]:
         #   Not enough arguments have been provided
         await search_record_by_boss.finish(InteractionMessage.INVALID_ARG_NUMBER)
 
     time_range = ()
+    now_date = datetime.date.today().strftime('%Y-%m-%d')
     if len(arg_list) == 1:
         time_range = (
-            time.mktime(datetime.date.today().timetuple()),
-            time.mktime((datetime.date.today() + datetime.timedelta(hours=23, minutes=59, seconds=59)).timetuple())
+            int(time.mktime(datetime.datetime.strptime(now_date, '%Y-%m-%d').timetuple())),
+            int(time.mktime((datetime.datetime.strptime(now_date, '%Y-%m-%d') +
+                             datetime.timedelta(hours=23, minutes=59, seconds=59)).timetuple()))
         )
     else:
         if arg_list[1] != '-all':
@@ -296,8 +300,8 @@ def _revue_record_boss_formatter(record: dict) -> str:
     成员 {} 使用队伍 {} 造成 {} 点伤害
     第 {} 刀，消耗 {} 回合
     时间 {}'''.format(
+        record['member_id'],
         record['team'],
-        record['boss_id'],
         record['damage'],
         record['sequence'],
         record['turn'],

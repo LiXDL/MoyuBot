@@ -29,34 +29,34 @@ helper = on_command(
 
 add_member = on_command(
     cmd='add_member',
-    aliases={'添加成员'},
+    aliases={'添加成员', 'am'},
     permission=permission.SUPERUSER,
     priority=1
 )
 
 remove_member = on_command(
     cmd='remove_member',
-    aliases={'移除成员'},
+    aliases={'移除成员', 'rm'},
     permission=permission.SUPERUSER,
     priority=2
 )
 
 update_member = on_command(
     cmd='update_member',
-    aliases={'更新成员'},
+    aliases={'更新成员', 'um'},
     permission=permission.SUPERUSER,
     priority=3
 )
 
 search_member = on_command(
     cmd='search_member',
-    aliases={'搜索成员'},
+    aliases={'搜索成员', 'sm'},
     priority=4
 )
 
 list_member = on_command(
     cmd='list_member',
-    aliases={'成员列表'},
+    aliases={'成员列表', 'lm'},
     priority=4
 )
 

@@ -125,13 +125,12 @@ class MemberDB:
                 async with conn.execute(search_phrase, search_param) as cursor:
                     record = await cursor.fetchone()
                     if record:
-                        # result = {
-                        #     'id': str(record[0]),
-                        #     'alias': bytes(record[1]).decode('utf8'),
-                        #     'account': str(record[2]),
-                        #     'password': str(record[3])
-                        # }
-                        result = dict(zip(record.keys(), tuple(record)))
+                        result = {
+                            'id': str(record[0]),
+                            'alias': bytes(record[1]).decode('utf8'),
+                            'account': str(record[2]),
+                            'password': str(record[3])
+                        }
                         return {
                             'status': DBStatusCode.SEARCH_SUCCESS,
                             'error': None,
@@ -170,10 +169,10 @@ class MemberDB:
                     records = await cursor.fetchall()
                     for record in records:
                         result.append({
-                            'id': str(record['id']),
-                            'alias': bytes(record['alias']).decode('utf8'),
-                            'account': str(record['account']),
-                            'password': str(record['password'])
+                            'id': str(record[0]),
+                            'alias': bytes(record[1]).decode('utf8'),
+                            'account': str(record[2]),
+                            'password': str(record[3])
                         })
                 return {
                     'status': DBStatusCode.SEARCH_SUCCESS,

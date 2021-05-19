@@ -41,7 +41,7 @@ class InteractionMessage:
     2. /boss管理 用于查看Boss管理部分命令
     3. /记录管理 用于查看出刀记录管理部分命令
     4. /刀型管理 未实装
-    '''
+    '''.strip()
 
     MEMBER_MANAGER_HELP_MESSAGE = '''
     成员管理：
@@ -77,5 +77,5 @@ class InteractionMessage:
     RECORD_SEARCH_HELP_MESSAGE = '''
     请使用指定对象的搜索命令：必须{可选}
     /search_record.member|搜索记录.成员|sr.m QQ号|昵称,{日期(YYYY-MM-DD)|-all}
-    /search_record.boss|搜索记录.成员|sr.b BossID|Boss名,{日期(YYYY-MM-DD)|-all}
+    /search_record.boss|搜索记录.boss|sr.b BossID|Boss名,{日期(YYYY-MM-DD)|-all}
     '''.strip()
