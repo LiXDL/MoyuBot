@@ -1,6 +1,6 @@
 import aiosqlite
 from pathlib import Path
-from .model import DBStatusCode
+from .constants import DBStatusCode
 
 
 class RecordDB:

@@ -9,7 +9,7 @@ import nonebot.adapters.cqhttp.permission as cpermission
 from nonebot.plugin import on_command
 
 from .config import Config
-from .model import InteractionMessage, DBStatusCode
+from .constants import InteractionMessage, DBStatusCode
 from . import BossDB
 
 global_config = nonebot.get_driver().config

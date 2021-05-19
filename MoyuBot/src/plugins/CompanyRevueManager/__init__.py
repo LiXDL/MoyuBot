@@ -7,7 +7,7 @@ from nonebot.plugin import on_command
 from . import MemberManager
 from . import BossManager
 from . import RevueRecordManager
-from .model import InteractionMessage
+from .constants import InteractionMessage
 
 nonebot.get_driver()
 

@@ -1,81 +1,102 @@
-from enum import Enum
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    ForeignKey
+)
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relationship
+
+Base = declarative_base()
 
 
-class DBStatusCode(Enum):
-    INSERT_SUCCESS = 201
-    DELETE_SUCCESS = 202
-    UPDATE_SUCCESS = 203
-    SEARCH_SUCCESS = 204
+class Member(Base):
+    __tablename__ = "CompanyInfo"
 
-    INSERT_FAIL = 301
-    DELETE_FAIL = 302
-    UPDATE_FAIL = 303
-    SEARCH_FAIL = 304
+    member_id = Column(String, primary_key=True)
+    alias = Column(String)
+    account = Column(String)
+    password = Column(String)
 
-    UNKNOWN_ERROR = 404
+    def __init__(self, member_id: str, alias: str, account: str, password: str):
+        self.member_id = member_id
+        self.alias = alias
+        self.account = account
+        self.password = password
+
+    def __repr__(self):
+        return '<Member (id:{}, alias:{}, account:{}, password: {})>'.format(
+            self.member_id, self.alias, self.account, self.password
+        )
 
 
-class InteractionMessage:
-    RECORD_CHANGE_SUCCESS = '已更新记录。'
-    RECORD_FIND_SUCCESS = '找到记录：{}。'
-    RECORD_LIST_EMPTY = '记录为空。'
-    RECORD_LIST_SUCCESS = '记录如下：'
+class Boss(Base):
+    __tablename__ = "BossInfo"
 
-    RECORD_CHANGE_FAIL = '记录更新失败。'
-    RECORD_FIND_FAIL = '未找到记录：{}。'
-    RECORD_CHANGE_ABORT = '放弃更新记录。'
+    boss_id = Column(Integer, primary_key=True)
+    alias = Column(String)
+    health = Column(Integer)
 
-    PRIVATE_MESSAGE_SENT_CHECK = '已通过私聊发送。'
+    def __init__(self, boss_id, alias, health):
+        self.boss_id = boss_id
+        self.alias = alias
+        self.health = health
 
-    ERROR_MESSAGE = '发生错误，请联系管理员。'
-    INVALID_ARG = '非法参数！请重新输入！'
-    INVALID_ARG_NUMBER = '参数数量错误！请重新输入！'
-    REQUEST_ARG = '未检测到参数，请输入参数。'
-    REQUEST_CONFIRM = '请确认操作[y/n]。'
-    CONFIRMATION_MESSAGE = ['y', 'n', 'yes', 'no']
+    def __repr__(self):
+        return '<Boss (id:{}, alias:{}, health:{})>'.format(
+            self.boss_id, self.alias, self.health
+        )
 
-    OVERALL_HELPER = '''
-    工会战管理插件：
-    0. 使用"/"作为命令起始，英文逗号","作为参数分隔符
-    1. /成员管理 用于查看成员管理部分命令
-    2. /boss管理 用于查看Boss管理部分命令
-    3. /记录管理 用于查看出刀记录管理部分命令
-    4. /刀型管理 未实装
-    '''.strip()
 
-    MEMBER_MANAGER_HELP_MESSAGE = '''
-    成员管理：
-    0. 使用英文逗号","作为参数分隔符，请遵循参数输入顺序
-    1. /添加成员 QQ号,昵称,游戏账号,密码（仅限超管使用）
-    2. /移除成员 QQ号（仅限超管使用）
-    3. /更新成员 QQ号,昵称,游戏账号,密码（仅限超管使用）
-    4. /搜索成员 QQ号|昵称
-    5. /成员列表
-    '''.strip()
+class Record(Base):
+    __tablename__ = "RevueRecord"
 
-    BOSS_MANAGER_HELP_MESSAGE = '''
-    boss管理：
-    0. 使用英文逗号","作为参数分隔符，请遵循参数输入顺序
-    1. /添加boss BossID,Boss名,血量（仅限管理使用）
-    2. /移除boss BossID（仅限管理使用）
-    3. /更新boss BossID,Boss名,血量（仅限管理使用）
-    4. /搜索boss BossID|Boss名
-    5. /boss列表
-    '''.strip()
+    record_id = Column(Integer, primary_key=True, autoincrement=True)
+    member_id = Column(String, ForeignKey("CompanyInfo.member_id", onupdate='CASCADE', ondelete='NO ACTION'))
+    boss_id = Column(Integer, ForeignKey("BossInfo.boss_id", onupdate='CASCADE', ondelete='NO ACTION'))
+    damage = Column(Integer)
+    sequence = Column(Integer)
+    turn = Column(Integer)
+    team = Column(Integer)
+    date_time = Column(Integer)
 
-    RECORD_MANAGER_HELP_MESSAGE = '''
-    记录管理：
-    0. 使用英文逗号","作为参数分隔符，请遵循参数输入顺序及格式
-    1. /添加记录 BossID,队伍序号,刀序(第几刀),伤害值,
-        {回合数(留空默认为6)},
-        {日期(YYYY-MM-DD留空默认为当天)},
-        {QQ号(留空默认为发送者QQ号)}
-    2. /删除记录 QQ号,BossID,伤害值（仅限管理使用）
-    3. /搜索记录 用于查看搜索命令
-    '''.strip()
+    member = relationship("MemberInfo", backref="member_revue_record",)
+    boss = relationship("BossInfo", backref="boss_revue_record")
 
-    RECORD_SEARCH_HELP_MESSAGE = '''
-    请使用指定对象的搜索命令：必须{可选}
-    /search_record.member|搜索记录.成员|sr.m QQ号|昵称,{日期(YYYY-MM-DD)|-all}
-    /search_record.boss|搜索记录.boss|sr.b BossID|Boss名,{日期(YYYY-MM-DD)|-all}
-    '''.strip()
+    def __init__(self, member_id: str, boss_id: int, damage: int, sequence: int, turn: int, team: int, date_time: int):
+        self.member_id = member_id
+        self.boss_id = boss_id
+        self.damage = damage
+        self.sequence = sequence
+        self.turn = turn
+        self.team = team
+        self.date_time = date_time
+
+    def __repr__(self):
+        return '<RevueRecord (id: {}, member_id: {}, boss_id: {}, damage: {}, sequence: {}, ' \
+               'turn: {}, team: {}, date_time: {})>'.format(
+                self.record_id, self.member_id, self.boss_id, self.damage, self.sequence,
+                self.turn, self.team, self.date_time)
+
+
+class Team(Base):
+    __tablename__ = "TeamRecord"
+
+    record_id = Column(Integer, primary_key=True, autoincrement=True)
+    member_id = Column(String, ForeignKey("CompanyInfo.member_id", onupdate='CASCADE', ondelete='NO ACTION'))
+    team_id = Column(Integer)
+    team_list = Column(String)
+    us_list = Column(String)
+
+    member = relationship("MemberInfo", backref='member_team')
+
+    def __init__(self, member_id: str, team_id: int, team_list: str, us_list: str):
+        self.member_id = member_id
+        self.team_id = team_id
+        self.team_list = team_list
+        self.us_list = us_list
+
+    def __repr__(self):
+        return '<TeamRecord (id: {}, member_id: {}, team_id: {}, team_list: [{}], us_list: [{}])>'.format(
+            self.record_id, self.member_id, self.team_id, self.team_list, self.us_list
+        )
