@@ -5,6 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/Private/MoyuBot/Data" />
       <excludeFolder url="file://$MODULE_DIR$/Private/gocqhttp" />
       <excludeFolder url="file://$MODULE_DIR$/pip" />
+      <excludeFolder url="file://$MODULE_DIR$/Shared" />
     </content>
     <orderEntry type="jdk" jdkName="Python 3.9 (nbot_venv)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />

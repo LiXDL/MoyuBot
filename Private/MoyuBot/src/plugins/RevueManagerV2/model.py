@@ -1,6 +1,4 @@
 #   ORM database model and initialization
-
-from pathlib import Path
 from sqlalchemy import (
     Column,
     Integer,
@@ -8,13 +6,9 @@ from sqlalchemy import (
     ForeignKey
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.orm import relationship
 
-
-
 Base = declarative_base()
-DB_FILE = Path.cwd().parent.parent.parent.joinpath('Data/Company').joinpath('ORMTest').joinpath('Revue.db')
 
 
 class Member(Base):
@@ -24,6 +18,9 @@ class Member(Base):
     alias = Column(String)
     account = Column(String)
     password = Column(String)
+
+    record = relationship("Record", backref="member")
+    team = relationship("Team", backref='member')
 
     def __init__(self, member_id: str, alias: str, account: str, password: str):
         self.member_id = member_id
@@ -43,6 +40,8 @@ class Boss(Base):
     boss_id = Column(Integer, primary_key=True)
     alias = Column(String)
     health = Column(Integer)
+
+    record = relationship("Record", backref="boss", lazy='joined')
 
     def __init__(self, boss_id, alias, health):
         self.boss_id = boss_id
@@ -66,9 +65,6 @@ class Record(Base):
     turn = Column(Integer)
     team = Column(Integer)
     date_time = Column(Integer)
-
-    member = relationship("MemberInfo", backref="member_revue_record",)
-    boss = relationship("BossInfo", backref="boss_revue_record")
 
     def __init__(self, member_id: str, boss_id: int, damage: int, sequence: int, turn: int, team: int, date_time: int):
         self.member_id = member_id
@@ -95,8 +91,6 @@ class Team(Base):
     team_list = Column(String)
     us_list = Column(String)
 
-    member = relationship("MemberInfo", backref='member_team')
-
     def __init__(self, member_id: str, team_id: int, team_list: str, us_list: str):
         self.member_id = member_id
         self.team_id = team_id
@@ -108,13 +102,33 @@ class Team(Base):
             self.record_id, self.member_id, self.team_id, self.team_list, self.us_list
         )
 
-
-async def _reset_database():
-    aioengine = create_async_engine('sqlite+aiosqlite:///' + str(DB_FILE), echo=True)
-
-    async with aioengine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-
-
-
+#   Deprecated test function
+# async def _reset_database(database_path: Path = None):
+#     if database_path is None:
+#         db_file = Path.cwd().parent.parent.parent.joinpath('Data/Company').joinpath('ORMTest').joinpath('Revue.db')
+#     else:
+#         db_file = database_path
+#
+#     aioengine = create_async_engine('sqlite+aiosqlite:///' + str(db_file), echo=True)
+#
+#     async with aioengine.begin() as conn:
+#         await conn.run_sync(Base.metadata.drop_all)
+#         await conn.run_sync(Base.metadata.create_all)
+#
+#
+# async def test_backref():
+#     db_file = Path.cwd().parent.parent.parent.joinpath('Data/Company').joinpath('ORMTest').joinpath('Revue.db')
+#     aioengien = create_async_engine('sqlite+aiosqlite:///' + str(db_file), echo=True)
+#
+#     async_session = sessionmaker(aioengien, expire_on_commit=False, class_=AsyncSession)
+#
+#     async with async_session() as session:
+#         query_phrase = select(Member).options(selectinload(Member.record))
+#
+#         test_records = await session.execute(query_phrase)
+#         for person_record in test_records.scalars():
+#             print(str(person_record))
+#             for record in person_record.record:
+#                 print(person_record.alias + ': ' + str(record))
+#
+#   asyncio.run(test_backref())

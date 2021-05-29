@@ -9,7 +9,12 @@ from . import BossManager
 from . import RevueRecordManager
 from .constants import InteractionMessage
 
-nonebot.get_driver()
+bot_driver = nonebot.get_driver()
+
+
+bot_driver.on_startup(
+    lambda: print('Your bot has just started.')
+)
 
 overall_helper = on_command(
     cmd='help',
