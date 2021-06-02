@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from sqlalchemy import delete, update, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -15,20 +13,20 @@ from .debugger import debugger
 class MemberController(object):
     __instance = None
 
-    def __new__(cls, db_path: Path):
+    def __new__(cls, db_path: str):
         if cls.__instance is None:
             cls.__instance = object.__new__(cls)
-            cls.__engine = create_async_engine('sqlite+aiosqlite:///' + str(db_path))
-            cls._session = sessionmaker(cls.__engine, expire_on_commit=False, class_=AsyncSession)
+            cls.__engine = create_async_engine('sqlite+aiosqlite:///' + db_path)
+            cls.__session = sessionmaker(cls.__engine, expire_on_commit=False, class_=AsyncSession)
         return cls.__instance
 
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: str):
         pass
 
     @classmethod
-    def change_database(cls, db_path: Path):
+    def change_database(cls, db_path: str):
         cls.__engine = create_async_engine('sqlite+aiosqlite:///' + str(db_path))
-        cls._session = sessionmaker(cls.__engine, expire_on_commit=False, class_=AsyncSession)
+        cls.__session = sessionmaker(cls.__engine, expire_on_commit=False, class_=AsyncSession)
 
     #   Add a new member record to the CompanyInfo
     #   The key-value pairs in dict must match the parameter of Member
@@ -39,7 +37,7 @@ class MemberController(object):
         if existence:
             return {'result': None, 'code': DBStatusCode.RECORD_ALREADY_EXIST}
 
-        async with self._session.begin() as async_session:
+        async with self.__session.begin() as async_session:
             await async_session.add(Member(**info))
 
         #   Nothing is returned for adding
@@ -53,7 +51,7 @@ class MemberController(object):
         if not existence:
             return {'result': None, 'code': DBStatusCode.RECORD_NOT_EXIST}
 
-        async with self._session.begin() as async_session:
+        async with self.__session.begin() as async_session:
             stmt = delete(Member).where(Member.member_id == member_id)
             await async_session.execute(stmt)
 
@@ -69,7 +67,7 @@ class MemberController(object):
         if not existence:
             return {'result': None, 'code': DBStatusCode.RECORD_NOT_EXIST}
 
-        async with self._session.begin() as async_session:
+        async with self.__session.begin() as async_session:
             stmt = update(Member).where(Member.member_id == info['member_id']).values(**info)
             await async_session.execute(stmt)
 
@@ -92,9 +90,9 @@ class MemberController(object):
     #   List all member records in the CompanyInfo
     @debugger
     async def list(self):
-        async with self._session.begin() as async_session:
+        async with self.__session.begin() as async_session:
             query = await async_session.stream(select(Member))
-            records = await query.all()
+            records = await query.scalars().all()
 
             result = []
             for record in records:
@@ -108,9 +106,9 @@ class MemberController(object):
 
     #   Helper method for check member existence
     async def _search_single(self, member_id: str, alias: str) -> Member:
-        async with self._session.begin() as async_session:
+        async with self.__session.begin() as async_session:
             results = await async_session.stream(
                 select(Member).filter(or_(Member.member_id == member_id, Member.alias == alias))
             )
-            result = await results.first()
+            result = await results.scalars().first()
         return result

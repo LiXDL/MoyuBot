@@ -19,8 +19,8 @@ class Member(Base):
     account = Column(String)
     password = Column(String)
 
-    record = relationship("Record", backref="member")
-    team = relationship("Team", backref='member')
+    records = relationship("Record", back_populates='member', order_by='asc(Record.boss_id)')
+    teams = relationship("Team", back_populates="member", order_by='asc(team_id)')
 
     def __init__(self, member_id: str, alias: str, account: str, password: str):
         self.member_id = member_id
@@ -41,7 +41,7 @@ class Boss(Base):
     alias = Column(String)
     health = Column(Integer)
 
-    record = relationship("Record", backref="boss", lazy='joined')
+    records = relationship("Record", back_populates="boss", order_by='desc(Record.damage)')
 
     def __init__(self, boss_id, alias, health):
         self.boss_id = boss_id
@@ -65,6 +65,9 @@ class Record(Base):
     turn = Column(Integer)
     team = Column(Integer)
     date_time = Column(Integer)
+
+    member = relationship("Member", back_populates='records')
+    boss = relationship("Boss", back_populates='records')
 
     def __init__(self, member_id: str, boss_id: int, damage: int, sequence: int, turn: int, team: int, date_time: int):
         self.member_id = member_id
@@ -90,6 +93,8 @@ class Team(Base):
     team_id = Column(Integer)
     team_list = Column(String)
     us_list = Column(String)
+
+    member = relationship("Member", back_populates='teams')
 
     def __init__(self, member_id: str, team_id: int, team_list: str, us_list: str):
         self.member_id = member_id

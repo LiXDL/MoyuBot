@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from sqlalchemy import delete, update, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine
@@ -15,20 +13,20 @@ from .debugger import debugger
 class BossController(object):
     __instance = None
 
-    def __new__(cls, db_path: Path):
+    def __new__(cls, db_path: str):
         if cls.__instance is None:
             cls.__instance = object.__new__(cls)
-            cls.__engine = create_async_engine('sqlite+aiosqlite:///' + str(db_path))
-            cls._session = sessionmaker(cls.__engine, expire_on_commit=False, class_=AsyncSession)
+            cls.__engine = create_async_engine('sqlite+aiosqlite:///' + db_path)
+            cls.__session = sessionmaker(cls.__engine, expire_on_commit=False, class_=AsyncSession)
         return cls.__instance
 
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: str):
         pass
 
     @classmethod
-    def change_database(cls, db_path: Path):
+    def change_database(cls, db_path: str):
         cls.__engine = create_async_engine('sqlite+aiosqlite:///' + str(db_path))
-        cls._session = sessionmaker(cls.__engine, expire_on_commit=False, class_=AsyncSession)
+        cls.__session = sessionmaker(cls.__engine, expire_on_commit=False, class_=AsyncSession)
 
     #   Add a new boss record to the BossInfo
     #   The key-value pairs in dict must match the parameter of Boss
@@ -39,7 +37,7 @@ class BossController(object):
         if existence:
             return {'result': None, 'code': DBStatusCode.RECORD_ALREADY_EXIST}
 
-        async with self._session.begin() as async_session:
+        async with self.__session.begin() as async_session:
             await async_session.add(Boss(**info))
 
         #   Nothing is returned for adding
@@ -53,7 +51,7 @@ class BossController(object):
         if not existence:
             return {'result': None, 'code': DBStatusCode.RECORD_NOT_EXIST}
 
-        async with self._session.begin() as async_session:
+        async with self.__session.begin() as async_session:
             stmt = delete(Boss).where(Boss.boss_id == boss_id)
             await async_session.execute(stmt)
 
@@ -69,7 +67,7 @@ class BossController(object):
         if not existence:
             return {'result': None, 'code': DBStatusCode.RECORD_NOT_EXIST}
 
-        async with self._session.begin() as async_session:
+        async with self.__session.begin() as async_session:
             stmt = update(Boss).where(Boss.boss_id == info['boss_id']).values(**info)
             await async_session.execute(stmt)
 
@@ -82,7 +80,7 @@ class BossController(object):
             boss_id = int(identifier)
             alias = ''
         except ValueError:
-            boss_id = 0
+            boss_id = -1
             alias = identifier
 
         record = await self._search_single(boss_id, alias)
@@ -98,9 +96,9 @@ class BossController(object):
     #   List all member records in the CompanyInfo
     @debugger
     async def list(self):
-        async with self._session.begin() as async_session:
+        async with self.__session.begin() as async_session:
             query = await async_session.stream(select(Boss))
-            records = await query.all()
+            records = await query.scalars().all()
 
             result = []
             for record in records:
@@ -113,9 +111,9 @@ class BossController(object):
 
     #   Helper method for check boss existence
     async def _search_single(self, boss_id: int, alias: str) -> Boss:
-        async with self._session.begin() as async_session:
+        async with self.__session.begin() as async_session:
             results = await async_session.stream(
                 select(Boss).filter(or_(Boss.boss_id == boss_id, Boss.alias == alias))
             )
-            result = await results.first()
+            result = await results.scalars().first()
         return result
