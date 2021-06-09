@@ -4,9 +4,19 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
+
 from .model import Boss
 from .constants import DBStatusCode
 from .debugger import debugger
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 #   Use singleton to force single connection.
@@ -38,7 +48,7 @@ class BossController(object):
             return {'result': None, 'code': DBStatusCode.RECORD_ALREADY_EXIST}
 
         async with self.__session.begin() as async_session:
-            await async_session.add(Boss(**info))
+            async_session.add(Boss(**info))
 
         #   Nothing is returned for adding
         return{'result': None, 'code': DBStatusCode.INSERT_SUCCESS}
@@ -103,7 +113,7 @@ class BossController(object):
             result = []
             for record in records:
                 result.append({
-                    'member_id': int(record.boss_id),
+                    'boss_id': int(record.boss_id),
                     'alias': record.alias,
                     'health': int(record.health)
                 })

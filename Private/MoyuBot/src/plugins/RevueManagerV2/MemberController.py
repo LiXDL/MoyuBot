@@ -4,9 +4,19 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker
 
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
+
 from .model import Member
 from .constants import DBStatusCode
 from .debugger import debugger
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 #   Use singleton to force single connection.
@@ -38,7 +48,7 @@ class MemberController(object):
             return {'result': None, 'code': DBStatusCode.RECORD_ALREADY_EXIST}
 
         async with self.__session.begin() as async_session:
-            await async_session.add(Member(**info))
+            async_session.add(Member(**info))
 
         #   Nothing is returned for adding
         return {'result': None, 'code': DBStatusCode.INSERT_SUCCESS}

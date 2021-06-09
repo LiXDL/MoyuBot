@@ -53,7 +53,7 @@ async def test_fkey():
     async_session = sessionmaker(aioengien, class_=AsyncSession)
 
     async with async_session.begin() as session:
-        # stmt = select(Member).options(lazyload(Member.records.and_(Record.date_time >= 1621314000)))
+        stmt = select(Member).filter(Member.member_id == '476121826')
         # query = await session.stream(stmt)
         # records = await query.scalars().all()
         # stmt = select(Record).options(selectinload(Record.member)).filter(Record.member.alias == '潇洒')
@@ -61,14 +61,14 @@ async def test_fkey():
         #     selectinload(Member.records),
         #     with_loader_criteria(Record, and_(Record.date_time >= 1621314000, Record.date_time <= 1621315000))
         # ).filter(Member.member_id == '476121826')
-        stmt = select(Record).options(
-            selectinload(Record.member),
-            with_loader_criteria(Member, Member.alias == 'fami')
-        ).order_by(Record.boss_id)
+        # stmt = select(Record).options(
+        #     selectinload(Record.member),
+        #     with_loader_criteria(Member, Member.alias == 'fami')
+        # ).order_by(Record.boss_id)
         query = await session.stream(stmt)
         records = await query.scalars().all()
-        member = records[0].member.alias
-        print(member)
+        # member = records[0].member.alias
+        print(records)
 
 
 async def expire_test():

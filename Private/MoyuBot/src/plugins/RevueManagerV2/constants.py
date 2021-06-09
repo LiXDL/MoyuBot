@@ -59,22 +59,26 @@ class InteractionMessage:
     BOSS_MANAGER_HELP_MESSAGE = '''
     boss管理：
     0. 使用英文逗号","作为参数分隔符，请遵循参数输入顺序
-    1. /添加boss BossID,Boss名,血量（仅限管理使用）
-    2. /移除boss BossID（仅限管理使用）
-    3. /更新boss BossID,Boss名,血量（仅限管理使用）
-    4. /搜索boss BossID|Boss名
-    5. /boss列表
+    1. /添加boss|ab BossID,Boss名,血量（仅限管理使用）
+    2. /添加boss组|abr Boss1名,Boss2名,Boss3名,Boss4名,
+        Boss1血量,Boss2血量,Boss3血量,Boss4血量,
+        起始难度(包括),终止难度(不包括)（仅限管理使用）
+    3. /移除boss|rb BossID（仅限管理使用）
+    4. /更新boss|ub BossID,Boss名,血量（仅限管理使用）
+    5. /搜索boss|sb BossID|Boss名
+    6. /boss列表|lb
     '''.strip()
 
     RECORD_MANAGER_HELP_MESSAGE = '''
     记录管理：
     0. 使用英文逗号","作为参数分隔符，请遵循参数输入顺序及格式
-    1. /添加记录 BossID,队伍序号,刀序(第几刀),伤害值,
+    1. /添加记录|ar 刀序(第几刀),BossID,队伍序号,伤害值,
         {回合数(留空默认为6)},
         {日期(YYYY-MM-DD留空默认为当天)},
         {QQ号(留空默认为发送者QQ号)}
-    2. /删除记录 QQ号,BossID,伤害值（仅限管理使用）
-    3. /搜索记录 用于查看搜索命令
+        {或使用@功能自动获取QQ号，且@为最优先模式}
+    2. /删除记录|rr QQ号,BossID,伤害值（仅限管理使用）
+    3. /搜索记录|sr 用于查看搜索命令
     '''.strip()
 
     RECORD_SEARCH_HELP_MESSAGE = '''

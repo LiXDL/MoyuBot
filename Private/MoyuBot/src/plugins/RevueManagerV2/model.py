@@ -20,7 +20,7 @@ class Member(Base):
     password = Column(String)
 
     records = relationship("Record", back_populates='member', order_by='asc(Record.boss_id)')
-    teams = relationship("Team", back_populates="member", order_by='asc(team_id)')
+    teams = relationship("Team", back_populates="member", order_by='asc(Team.team_id)')
 
     def __init__(self, member_id: str, alias: str, account: str, password: str):
         self.member_id = member_id
@@ -56,6 +56,7 @@ class Boss(Base):
 
 class Record(Base):
     __tablename__ = "RevueRecord"
+    __table_args__ = {'sqlite_autoincrement': True}
 
     record_id = Column(Integer, primary_key=True, autoincrement=True)
     member_id = Column(String, ForeignKey("CompanyInfo.member_id", onupdate='CASCADE', ondelete='NO ACTION'))
@@ -87,6 +88,7 @@ class Record(Base):
 
 class Team(Base):
     __tablename__ = "TeamRecord"
+    __table_args__ = {'sqlite_autoincrement': True}
 
     record_id = Column(Integer, primary_key=True, autoincrement=True)
     member_id = Column(String, ForeignKey("CompanyInfo.member_id", onupdate='CASCADE', ondelete='NO ACTION'))
@@ -108,6 +110,7 @@ class Team(Base):
         )
 
 #   Deprecated test function
+#
 # async def _reset_database(database_path: Path = None):
 #     if database_path is None:
 #         db_file = Path.cwd().parent.parent.parent.joinpath('Data/Company').joinpath('ORMTest').joinpath('Revue.db')

@@ -4,9 +4,19 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.future import select
 from sqlalchemy.orm import sessionmaker, selectinload, with_loader_criteria
 
+from sqlalchemy.engine import Engine
+from sqlalchemy import event
+
 from .model import Member, Boss, Record
 from .constants import DBStatusCode
 from .debugger import debugger
+
+
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
 
 
 #   Use singleton to force single connection.
@@ -34,10 +44,10 @@ class RecordController(object):
     @debugger
     async def add(self, info: dict):
         async with self.__session.begin() as async_session:
-            await async_session.add(Record(**info))
+            async_session.add(Record(**info))
 
         #   Nothing is returned for adding
-        return{'result': None, 'code': DBStatusCode.INSERT_SUCCESS}
+        return {'result': None, 'code': DBStatusCode.INSERT_SUCCESS}
 
     #   Delete a revue record from the RevueRecord
     #   Deletion is performed based on member_id/alias, boss_id/alias, and damage
@@ -60,7 +70,7 @@ class RecordController(object):
         #   Nothing is returned for removing
         return {'result': None, 'code': DBStatusCode.DELETE_SUCCESS}
 
-    #   Search revue records from the RevueRecord identified by member_id/alias
+    #   Search revue records from the RevueRecord identified by member_id/alias, time_range(from, to)
     @debugger
     async def search_by_member(self, member_identifier: str, time_range: tuple[int, int]):
         async with self.__session.begin() as async_session:
@@ -85,7 +95,7 @@ class RecordController(object):
         else:
             return {'result': [], 'code': DBStatusCode.SEARCH_FAIL}
 
-    #   Search revue records from the RevueRecord identified by boss_id/alias
+    #   Search revue records from the RevueRecord identified by boss_id/alias, time_range(from, to)
     @debugger
     async def search_by_boss(self, boss_identifier: str, time_range: tuple[int, int]):
         try:
@@ -123,7 +133,7 @@ class RecordController(object):
             query = await async_session.stream(
                 select(Member).filter(or_(Member.member_id == member_identifier, Member.alias == member_identifier))
             )
-            record = await query.scalar()
+            record = await query.scalars().first()
         if record is None:
             return ''
         else:
@@ -139,8 +149,7 @@ class RecordController(object):
 
         async with self.__session.begin() as async_session:
             query = await async_session.stream(stmt)
-            record = await query.scalar()
-
+            record = await query.scalars().first()
         if record is None:
             return -1
         else:
@@ -156,5 +165,5 @@ class RecordController(object):
             'sequence': record.sequence,
             'turn': record.turn,
             'team': record.team,
-            'time': record.date_time
+            'date_time': record.date_time
         }

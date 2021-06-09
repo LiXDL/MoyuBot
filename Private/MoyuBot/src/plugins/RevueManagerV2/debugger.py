@@ -1,14 +1,14 @@
 from functools import wraps
+import traceback
 
 
 def debugger(func):
     @wraps(func)
     async def exception_wrapper(*args, **kwargs):
-        func_info = str(func.__qualname__).split('.')
+        func_info = str(func.__qualname__)
 
         result = {
-            'class': func_info[0],
-            'function': func_info[1]
+            'func_info': func_info
         }
 
         try:
@@ -17,7 +17,7 @@ def debugger(func):
             result['error'] = None
         except Exception as e:
             result['response'] = None
-            result['error'] = e
+            result['error'] = traceback.format_exc()
         finally:
             return result
 
