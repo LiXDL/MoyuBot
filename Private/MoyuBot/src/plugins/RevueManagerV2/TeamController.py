@@ -44,7 +44,7 @@ class TeamController(object):
     @debugger
     async def add(self, info: dict):
         existence = await self._search_single(info['member_id'], info['team_id'])
-        if not existence:
+        if existence:
             return {'result': None, 'code': DBStatusCode.RECORD_ALREADY_EXIST}
 
         async with self.__session.begin() as async_session:
@@ -54,16 +54,16 @@ class TeamController(object):
         return {'result': None, 'code': DBStatusCode.INSERT_SUCCESS}
 
     #   Delete a team record from the RevueRecord
-    #   Deletion is performed based on member_id/alias and team_id
+    #   Deletion is performed based on member_id and team_id
     @debugger
-    async def delete(self, member_identifier: str, team_id: int):
-        existence = await self._search_single(member_identifier, team_id)
+    async def delete(self, member_id: str, team_id: int):
+        existence = await self._search_single(member_id, team_id)
         if not existence:
             return {'result': None, 'code': DBStatusCode.RECORD_NOT_EXIST}
 
         async with self.__session.begin() as async_session:
             stmt = delete(Team).where(and_(
-                or_(Member.member_id == member_identifier, Member.alias == member_identifier),
+                Team.member_id == member_id,
                 Team.team_id == team_id
             ))
             await async_session.execute(stmt)
@@ -106,7 +106,7 @@ class TeamController(object):
         async with self.__session.begin() as async_session:
             stmt = select(Member).options(
                 selectinload(Member.teams)
-            ).filters(
+            ).filter(
                 or_(
                     Member.member_id == member_identifier,
                     Member.alias == member_identifier
@@ -117,7 +117,7 @@ class TeamController(object):
 
         if member:
             result = []
-            for team in member.records:
+            for team in member.teams:
                 result.append(self._formatter(team))
 
             return {'result': result, 'code': DBStatusCode.SEARCH_SUCCESS}

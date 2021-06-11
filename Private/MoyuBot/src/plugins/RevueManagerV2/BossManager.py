@@ -114,19 +114,19 @@ async def add_boss_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T
 
 
 @delete_boss.args_parser
-async def delete_boss_parser(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def delete_boss_parser(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     state[state['_current_key']] = int(str(event.get_message()).strip())
 
 
 @delete_boss.handle()
-async def delete_boss_first_receive(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def delete_boss_first_receive(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     raw_args = str(event.get_message()).strip()
     if raw_args:
         state['boss_id'] = int(raw_args)
 
 
 @delete_boss.got('boss_id', prompt=InteractionMessage.REQUEST_ARG)
-async def delete_boss_requester(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def delete_boss_requester(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     #   Check if the provided boss_id is in the records
     search_result = await data_source.bc.search(state['boss_id'])
 
@@ -164,7 +164,7 @@ async def delete_boss_requester(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent
 
 
 @delete_boss.handle()
-async def delete_boss_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def delete_boss_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     #   Request valid confirmation for deletion
     while True:
         if str(event.get_message()).strip() not in InteractionMessage.CONFIRMATION_MESSAGE:
@@ -197,12 +197,12 @@ async def delete_boss_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, 
 
 
 @update_boss.args_parser
-async def update_boss_parser(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def update_boss_parser(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     state[state['_current_key']] = str(event.get_message()).strip().split(plugin_config.separator)
 
 
 @update_boss.handle()
-async def update_boss_first_receive(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def update_boss_first_receive(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     raw_args = str(event.get_message()).strip()
     if raw_args:
         arg_list = raw_args.split(plugin_config.separator)
@@ -210,7 +210,7 @@ async def update_boss_first_receive(bot: cqhttp.Bot, event: cqhttp.GroupMessageE
 
 
 @update_boss.got('new_info', prompt=InteractionMessage.REQUEST_ARG)
-async def update_boss_requester(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def update_boss_requester(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     #   Check if all 3 info are provided
     if len(state['new_info']) != 3:
         await update_boss.finish(
@@ -254,7 +254,7 @@ async def update_boss_requester(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent
 
 
 @update_boss.handle()
-async def update_boss_handler(bot: cqhttp.Bot, event: cqhttp.GroupMessageEvent, state: typing.T_State):
+async def update_boss_handler(bot: cqhttp.Bot, event: cqhttp.Event, state: typing.T_State):
     #   Request valid confirmation for update
     while True:
         if str(event.get_message()).strip() not in InteractionMessage.CONFIRMATION_MESSAGE:
